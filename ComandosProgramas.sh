@@ -31,7 +31,6 @@ sudo apt install libipset13 -y
 
 echo " Configurando keepalived..."
 
-sudo nano /etc/keepalived/keepalived.conf
 
 cat <<EOF | sudo tee /etc/keepalived/keepalived.conf > /dev/null
 vrrp_instance VI_1 {
@@ -91,8 +90,8 @@ frontend http_front
 backend http_back
     balance roundrobin
     option httpchk GET /
-    server app1 192.168.137.40:${APP_PORT} check
-    server app2 192.168.137.41:${APP_PORT} check
+    server app1 192.168.137.40:${APP_PORT} check #IP del nodo 1
+    server app2 192.168.137.41:${APP_PORT} check #IP del nodo 2
 EOF
 
 sudo systemctl restart haproxy
@@ -154,13 +153,23 @@ exports.home = (req, res) => {
 EOF
 
 # ── PM2 ──────────────────────────────────────────────────────────────────────
-echo "🚀 Iniciando app con PM2..."
-pm2 start server.js --name "${APP_NAME}" -i max
+echo " Iniciando app con PM2..."
+pm2 start server.js --name "${APP_NAME}" -i 2
 pm2 save
+
 
 PM2_STARTUP=$(pm2 startup | tail -1)
 eval "$PM2_STARTUP"
 
+npm install redis
+
+const { createClient } = require("redis");
+
+const redis = createClient({
+  url: "redis://192.168.137.50:6379"
+});
+
+redis.connect();
 echo ""
 echo " ¡Pipeline completado!"
 echo "   VIP:      ${VIP}"
