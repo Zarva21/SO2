@@ -161,7 +161,7 @@ pm2 save
 PM2_STARTUP=$(pm2 startup | tail -1)
 eval "$PM2_STARTUP"
 
-npm install redis
+pnpm install redis
 
 const { createClient } = require("redis");
 
